@@ -1,6 +1,9 @@
 #Automated Data Cleaning Project
 
 
+/*This project demonstrates how the US Household Income dataset can be cleaned through an automated MySQL workflow. By automating the data cleaning process, the dataset can be consistently prepared for analysis with minimal manual intervention.*/
+
+
 SELECT * 
 FROM us_household_income.us_household_income2
 ;
@@ -30,7 +33,7 @@ FROM us_household_income.us_household_income2_cleaned;
   `TimeStamp` TIMESTAMP DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;*/
 
-
+/*The following steps walk through the creation of a MySQL stored procedure that automates the data cleaning process. The procedure creates a new table, loads the dataset, and applies each cleaning operation in sequence, resulting in a clean and standardized dataset.*/
 
 DELIMITER $$
 DROP PROCEDURE IF EXISTS Copy_and_Clean_Data;
@@ -114,25 +117,32 @@ CALL Copy_and_Clean_Data();
 
 
 -- Let's create an event that calls the procedure we just created every 2 minutes
+
 CREATE EVENT run_data_cleaning
 	ON Schedule EVERY 2 MINUTE
     DO CALL Copy_and_Clean_Data();
 
 
 /*The same data is added every 2 minutes, with a new timestamp generated each time by the 'run_data_cleaning' event.*/
+
 SELECT * FROM us_household_income.us_household_income2_cleaned;
 
 SELECT DISTINCT TimeStamp FROM us_household_income.us_household_income2_cleaned;
 
 
 -- Changed the schedule because the result set was increasing in size every 2 minutes.
+
 DROP EVENT run_data_cleaning;
 CREATE EVENT run_data_cleaning
 	ON Schedule EVERY 30 DAY
     DO CALL Copy_and_Clean_Data();
 
 
--- The results below are the results before the data cleaning.
+/*Let's delete the "us_household_income2_Cleaned" table. 
+The results below are the results before the data cleaning.*/
+
+-- We are looking for the duplicates.
+
 			SELECT row_id, id, row_num
 		FROM (
 			SELECT row_id, id,
@@ -145,18 +155,27 @@ CREATE EVENT run_data_cleaning
 		WHERE 
 			row_num > 1;
 
+
+-- Let's count how many rows we have.
+
 SELECT COUNT(row_id)
 FROM us_household_income2;
+
+
+/*These are the state names that need to be fixed.(Georgia, georia), The count number of Georgia it's going to change after standardization.*/
 
 SELECT State_Name, COUNT(State_Name)
 FROM us_household_income2
 GROUP BY State_Name;
 
+
 -- We run our stored procedure again.
+
 CALL Copy_and_Clean_Data();
 
 
 /* The results below are the results after the data cleaning. The duplicates were removed, there are fewer row_id values, and the state names are fixed.*/
+
 			SELECT row_id, id, row_num
 		FROM (
 			SELECT row_id, id,
@@ -169,8 +188,10 @@ CALL Copy_and_Clean_Data();
 		WHERE 
 			row_num > 1;
 
+
 SELECT COUNT(row_id)
 FROM us_household_income2_Cleaned;
+
 
 SELECT State_Name, COUNT(State_Name)
 FROM us_household_income2_Cleaned
